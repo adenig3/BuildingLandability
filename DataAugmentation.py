@@ -56,10 +56,11 @@ class DataAugmentation:
         """
         return cv2.imread(self.inp_file)
 
-    def cropBorder(self, plt_flag=False):
+    def cropBorder(self, plt_flag=False, save_orig=True):
         """
         Crops the border off an image, assumes the left/right borders are same thickness and top/bottom borders are same thickness.
         :param plt_flag: Boolean governing plotting of cropped image.
+        :param save_orig: Boolean governing whether the original image is saved or deleted.
         """
         img = self.readPng()
         nx, ny, nz = img.shape  # find number of pixels of image
@@ -68,6 +69,8 @@ class DataAugmentation:
         cv2.imwrite(self.crop_file,crop_img)
         if plt_flag:
             self.plotImage(crop_img)
+        if not save_orig:
+            os.remove(self.inp_file)
         return
 
 
@@ -77,4 +80,4 @@ if __name__ == '__main__':
     filenames = random.sample(os.listdir(da.basepath), N_crop)
     for fname in filenames:
         da = DataAugmentation(fname)  # instantiate data augmentation class
-        da.cropBorder()
+        da.cropBorder(save_orig=False)
