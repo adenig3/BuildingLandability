@@ -137,13 +137,13 @@ if make_model:
     model.summary()
 
 
-    model.fit(x=x_train, y=y_train, validation_split= 0.1, batch_size=None, epochs=100,verbose=2,validation_data=None)
+    model.fit(x=x_train, y=y_train, validation_split= 0.1, batch_size=None, epochs=200,verbose=2,validation_data=None)
     save_model(model, 'ModelFile.h5')
 
 
 model = load_model('ModelFile.h5')
-while True:
-    ind = int(input('Number: '))
+for ind in range(x_train.shape[0]):
+    #ind = int(input('Number: '))
     result = model.predict(x_train[ind:ind+1,:,:,:])
     truth = y_train[ind]
     thresh, result = cv2.threshold(result[0], 0.50, 255, cv2.THRESH_BINARY)
