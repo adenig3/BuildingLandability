@@ -98,6 +98,15 @@ def UNet():
     model = keras.models.Model(inputs, outputs)
     return model
 
+#Save the model
+def save_model(model_to_save, filename):
+    model_to_save.save(filename)
+
+#Load the model
+def load_model(filename):
+    return keras.models.load_model(filename)
+
+
 
 
 image_size = 192
@@ -109,25 +118,45 @@ batch_size = 8
 
 # General parameters
 download = False
+make_model = False
 if download:
     json_data = read_json(filename="export-2020-05-07T01_04_15.454Z.json")
     download_training_set_images(json_data, 'Inputs/', 'Labels/')
 
 x_train, y_train = load_training_set('Inputs/', 'Labels/')
 x_train, y_train = normalize_dataset(x_train,y_train)
-y_train2 = y_train[:,:,:,0]
-y_train = np.expand_dims(y_train2, axis=-1)
+# show_input_label(x_train, y_train, 155)
+
+if make_model:
+    y_train2 = y_train[:,:,:,0]
+    y_train = np.expand_dims(y_train2, axis=-1)
 
 
-model = UNet()
-model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
-model.summary()
+    model = UNet()
+    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
+    model.summary()
 
-model.fit(x=x_train, y=y_train, validation_split= 0.1, batch_size=None, epochs=10,verbose=2,validation_data=None)
 
-#show_input_label(x_train, y_train, 155)
+    model.fit(x=x_train, y=y_train, validation_split= 0.1, batch_size=None, epochs=100,verbose=2,validation_data=None)
+    save_model(model, 'ModelFile.h5')
 
-# Implement dataGen class
+
+model = load_model('ModelFile.h5')
+while True:
+    ind = int(input('Number: '))
+    result = model.predict(x_train[ind:ind+1,:,:,:])
+    truth = y_train[ind]
+    thresh, result = cv2.threshold(result[0], 0.50, 255, cv2.THRESH_BINARY)
+    img_concat = np.concatenate((result,truth[:,:,0]), axis=1)
+    cv2.imshow('Prediction vs. Truth', img_concat)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+
+
+
+
 
 
 
