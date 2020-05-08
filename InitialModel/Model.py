@@ -3,10 +3,13 @@ import json
 import cv2
 import numpy as np
 import os
+import random
+import shutil
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow_examples.models.pix2pix import pix2pix
+#from tensorflow_examples.models.pix2pix import pix2pix
+
 
 OUTPUT_CHANNELS = 2 #Either Landable or Not landable
 # Read In the JSON
@@ -15,6 +18,7 @@ def read_json(filename):
         json_data = json.load(f)
     return json_data
 
+
 #Shows an example image
 def show_input_label(x, y, example_num):
     img_concat = np.concatenate((x[example_num], y[example_num]), axis=1)
@@ -22,8 +26,13 @@ def show_input_label(x, y, example_num):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
 # Downloads the trainings st images from the URL in json file
 def download_training_set_images(json_data, inputs_filepath, labels_filepath):
+    if not os.path.isdir(inputs_filepath):
+        os.mkdir(inputs_filepath)
+    if not os.path.isdir(labels_filepath):
+        os.mkdir(labels_filepath)
     i = 0
     for example in json_data:
         input_fullpath = inputs_filepath + 'Input' + str(i) + '.png'
@@ -37,23 +46,82 @@ def download_training_set_images(json_data, inputs_filepath, labels_filepath):
             img = cv2.imread(label_fullpath)
             cv2.imwrite(label_fullpath, 255-img)
         i += 1
+    return
 
-# Loads the training set as numpy arrays
-def load_training_set(inputs_filepath, labels_filepath):
+
+def sort_data(inputs_filepath, labels_filepath,data_pct):
     input_filenames = os.listdir(inputs_filepath)
     label_filenames = os.listdir(labels_filepath)
     if len(input_filenames) != len(label_filenames):
-        raise Exception("Input and Label Sizes are Not the Same")
-    x_train = []
-    y_train = []
-    i = 0
-    for i in range(len(input_filenames)):
-        x_train.append(np.asarray(cv2.imread(inputs_filepath + 'Input' + str(i) + '.png')[0:192, 0:192, :]))
-        y_train.append(np.asarray(cv2.imread(labels_filepath + 'Label' + str(i) + '.png')[0:192, 0:192, :]))
+        raise Exception("Input and Label sizes are Not the Same")
+    if not os.path.isdir('train'):
+        os.mkdir('train')
+    if not os.path.isdir('train/Inputs/'):
+        os.mkdir('train/Inputs/')
+    if not os.path.isdir('train/Labels/'):
+        os.mkdir('train/Labels/')
+    if not os.path.isdir('validate'):
+        os.mkdir('validate')
+    if not os.path.isdir('validate/Inputs/'):
+        os.mkdir('validate/Inputs/')
+    if not os.path.isdir('validate/Labels/'):
+        os.mkdir('validate/Labels/')
+    if not os.path.isdir('test'):
+        os.mkdir('test')
+    if not os.path.isdir('test/Inputs/'):
+        os.mkdir('test/Inputs/')
+    if not os.path.isdir('test/Labels/'):
+        os.mkdir('test/Labels/')
+    num_data = len(input_filenames)  # total number of images in input data
+    data_breakdown = [round(pct*num_data) for pct in data_pct]
+    if sum(data_breakdown) != num_data:
+        diff = num_data - sum(data_breakdown)
+        data_breakdown[0] += diff
+    i = 1
+    for num in data_breakdown:
+        inputs_random = random.sample(os.listdir(inputs_filepath), num)
+        if i == 1:
+            dest = os.path.join(os.getcwd(),'train/')
+        elif i == 2:
+            dest = os.path.join(os.getcwd(),'validate/')
+        else:
+            dest = os.path.join(os.getcwd(),'test/')
+        for file_input in inputs_random:
+            file_label = 'Label' + file_input[len('Input'):]
+            src_input = os.path.join(os.path.join(os.getcwd(),inputs_filepath), file_input)
+            src_label = os.path.join(os.path.join(os.getcwd(),labels_filepath), file_label)
+            dest_input = os.path.join(os.path.join(dest, 'Inputs/'),file_input)
+            dest_label = os.path.join(os.path.join(dest, 'Labels/'),file_label)
+            if os.path.isfile(src_input):
+                shutil.move(src_input, dest_input)  # move input into appropriate folder
+            if os.path.isfile(src_label):
+                shutil.move(src_label, dest_label)  # move label into appropriate folder
         i += 1
-    x_train = np.asarray(x_train)
-    y_train = np.asarray(y_train)
-    return x_train, y_train
+    os.rmdir(inputs_filepath)
+    os.rmdir(labels_filepath)
+    return
+
+
+# Loads the training set as numpy arrays
+def load_dataset(inputs_filepath, labels_filepath):
+    input_filenames = os.listdir(inputs_filepath)
+    label_filenames = os.listdir(labels_filepath)
+    if len(input_filenames) != len(label_filenames):
+        raise Exception("Input and Label sizes are Not the Same")
+    x = []
+    y = []
+    idx_list = []
+    files = os.listdir(inputs_filepath)
+    for file in files:
+        file_num = file[5:-4]
+        idx_list.append(int(file_num))
+    for i in idx_list:
+        x.append(np.asarray(cv2.imread(inputs_filepath + 'Input' + str(i) + '.png')[0:192, 0:192, :]))
+        y.append(np.asarray(cv2.imread(labels_filepath + 'Label' + str(i) + '.png')[0:192, 0:192, :]))
+    x = np.asarray(x)
+    y = np.asarray(y)
+    return x, y
+
 
 #Normalizes the dataset for sigmoid
 def normalize_dataset(x, y):
@@ -65,6 +133,7 @@ def down_block(x, filters, kernel_size=(3, 3), padding="same", strides=1):
     p = keras.layers.MaxPool2D((2, 2), (2, 2))(c)
     return c, p
 
+
 def up_block(x, skip, filters, kernel_size=(3, 3), padding="same", strides=1):
     us = keras.layers.UpSampling2D((2, 2))(x)
     concat = keras.layers.Concatenate()([us, skip])
@@ -72,10 +141,13 @@ def up_block(x, skip, filters, kernel_size=(3, 3), padding="same", strides=1):
     c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
     return c
 
+
 def bottleneck(x, filters, kernel_size=(3, 3), padding="same", strides=1):
     c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(x)
     c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
     return c
+
+
 #Make the model. TBH idk what's happening
 def UNet():
     f = [16, 32, 64, 128, 256]
@@ -98,9 +170,11 @@ def UNet():
     model = keras.models.Model(inputs, outputs)
     return model
 
+
 #Save the model
 def save_model(model_to_save, filename):
     model_to_save.save(filename)
+
 
 #Load the model
 def load_model(filename):
@@ -110,20 +184,25 @@ def load_model(filename):
 
 
 image_size = 192
-train_path = "Inputs/"
+train_path = "train/"
 epochs = 5
 batch_size = 8
-
+data_pct = [0.8,0.1,0.1]  # percent of data for training, validation, and test
 
 
 # General parameters
 download = False
+sort = False
 make_model = False
+
 if download:
     json_data = read_json(filename="export-2020-05-07T01_04_15.454Z.json")
     download_training_set_images(json_data, 'Inputs/', 'Labels/')
 
-x_train, y_train = load_training_set('Inputs/', 'Labels/')
+if sort:
+    sort_data('Inputs/', 'Labels/', data_pct)
+x_train, y_train = load_dataset('train/Inputs/', 'train/Labels/')
+x_val, y_val = load_dataset('validate/Inputs/', 'validate/Labels/')
 x_train, y_train = normalize_dataset(x_train,y_train)
 # show_input_label(x_train, y_train, 155)
 
@@ -136,21 +215,36 @@ if make_model:
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
     model.summary()
 
-
-    model.fit(x=x_train, y=y_train, validation_split= 0.1, batch_size=None, epochs=200,verbose=2,validation_data=None)
+    model.fit(x=x_train, y=y_train, batch_size=None, epochs=200,verbose=2)  # validation_data=[x_val,y_val]
     save_model(model, 'ModelFile.h5')
 
 
 model = load_model('ModelFile.h5')
+
+for ind in range(x_val.shape[0]):
+    #ind = int(input('Number: '))
+    result = model.predict(x_val[ind:ind+1,:,:,:])
+    truth = y_val[ind]
+    thresh, result = cv2.threshold(result[0], 0.50, 255, cv2.THRESH_BINARY)
+    grey_line = np.zeros((image_size,2))
+    grey_line[:,:,] = 128
+    img_concat = np.concatenate((result,np.concatenate((grey_line,truth[:,:,0]), axis=1)), axis=1)
+    cv2.imshow('Prediction vs. Truth', img_concat)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
 for ind in range(x_train.shape[0]):
     #ind = int(input('Number: '))
     result = model.predict(x_train[ind:ind+1,:,:,:])
     truth = y_train[ind]
     thresh, result = cv2.threshold(result[0], 0.50, 255, cv2.THRESH_BINARY)
-    img_concat = np.concatenate((result,truth[:,:,0]), axis=1)
+    grey_line = np.zeros((image_size,2))
+    grey_line[:,:,] = 128
+    img_concat = np.concatenate((result,np.concatenate((grey_line,truth[:,:,0]), axis=1)), axis=1)
     cv2.imshow('Prediction vs. Truth', img_concat)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
 
 
 
