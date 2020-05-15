@@ -1,0 +1,8 @@
+
+# Default ignored files
+/workspace.xml
+train/
+test/
+validate/
+.idea/
+__pycache/
