@@ -1,0 +1,71 @@
+
+import cv2
+import numpy as np
+from DataManager import DataManager
+from ModelUtils import ModelUtils
+from Models.UNet import UNet
+import tensorflow as tf
+from tensorflow import keras
+
+
+
+# Data paths and sets info
+train_path = "train/"
+valid_path = "validate/"
+json_path ="export-2020-05-14T18_00_56.691Z.json"
+sets = ['main set 1']
+inputs_path = 'Inputs/'
+labels_path = 'Labels/'
+save_path = 'Models/UNet.h5'
+load_path = 'Models/UNet.h5'
+#load_path = 'ModelFile.h5'
+
+
+image_size = 192
+epochs = 5
+batch_size = 8
+data_pct = [0.8, 0.1, 0.1]  # percent of data for training, validation, and test
+
+# General parameters
+download = False
+sort = False
+make_model = False
+
+
+DM = DataManager(json_path, sets, inputs_path, labels_path, data_pct)
+MU = ModelUtils()
+
+
+if download:
+    DM.download_training_set()
+if sort:
+    DM.sort_data()
+
+x_train, y_train = DM.load_dataset(train_path+inputs_path, train_path+labels_path)
+x_val, y_val = DM.load_dataset(valid_path+inputs_path, valid_path+labels_path)
+x_train, y_train = DM.normalize_data(x_train,y_train)
+
+if make_model == True:
+    y_train2 = y_train[:, :, :, 0]
+    y_train = np.expand_dims(y_train2, axis=-1)
+
+    model = UNet([16, 32, 64, 128, 256], image_size)
+    model = model.configure()
+    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
+    model.summary()
+
+    model.fit(x=x_train, y=y_train, batch_size=None, epochs=70, verbose=2)  # validation_data=[x_val,y_val]
+    MU.save_model(model, save_path)
+else:
+    model = MU.load_model(load_path)
+
+
+
+MU.show_validation(model,x_val, y_val)
+MU.show_train(model,x_train, y_train)
+
+
+
+
+
+
