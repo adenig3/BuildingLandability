@@ -22,8 +22,8 @@ load_path = 'Models/UNet.h5'
 
 
 image_size = 192
-epochs = 5
-batch_size = 8
+epochs = 70
+batch_size = None
 data_pct = [0.8, 0.1, 0.1]  # percent of data for training, validation, and test
 
 # General parameters
@@ -54,7 +54,7 @@ if make_model:
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
     model.summary()
 
-    model.fit(x=x_train, y=y_train, batch_size=None, epochs=70, verbose=2)  # validation_data=[x_val,y_val]
+    model.fit(x=x_train, y=y_train, batch_size=batch_size, epochs=epochs, verbose=2)  # validation_data=[x_val,y_val]
     MU.save_model(model, save_path)
 else:
     model = MU.load_model(load_path)

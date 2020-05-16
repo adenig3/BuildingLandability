@@ -8,7 +8,7 @@ import shutil
 
 
 class JSONManager:
-    def __init__(self, json_path, sets_to_include, inputs_path, labels_path, data_pct):
+    def __init__(self, json_path, sets_to_include, inputs_path, labels_path, data_pct=[0.9,0.05,0.05]):
         self.json_path = json_path
         self.sets_to_include = sets_to_include
         self.inputs_path = inputs_path
