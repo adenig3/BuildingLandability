@@ -27,12 +27,18 @@ class DataManager:
             os.mkdir(self.labels_path)
         i = 0
         json_data = self.read_json()
+        json_data = json_data[2527:] #Delete 372
+        i = 2527
         for example in json_data:
             input_fullpath = self.inputs_path + 'Input' + str(i) + '.png'
             label_fullpath = self.labels_path + 'Label' + str(i) + '.png'
             img_url = example['Labeled Data']
-            mask_url = example['Label']['objects'][0]['instanceURI']  # White is landable
-            mask_type = example['Label']['objects'][0]['title']
+            try: #In case there is no label on an image
+                mask_url = example['Label']['objects'][0]['instanceURI']  # White is landable
+                mask_type = example['Label']['objects'][0]['title']
+            except:
+                i += 1
+                continue
             if example['Dataset Name'] in self.sets_to_include: #Include dataset names
                 urllib.request.urlretrieve(img_url, input_fullpath)  # Raw Input Image
                 urllib.request.urlretrieve(mask_url, label_fullpath)

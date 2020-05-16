@@ -1,9 +1,9 @@
 import tensorflow as tf
 from tensorflow import keras
-
+from tensorflow.keras import regularizers
 
 class UNet:
-    def __init__(self, num_filters, image_size, regularization_vals):
+    def __init__(self, num_filters, image_size):
         self.num_filters = num_filters
         self.image_size = image_size
 
