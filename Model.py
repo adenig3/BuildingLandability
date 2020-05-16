@@ -1,7 +1,7 @@
 
 import cv2
 import numpy as np
-from DataManager import DataManager
+from JSONManager import JSONManager
 from ModelUtils import ModelUtils
 from Models.UNet import UNet
 import tensorflow as tf
@@ -32,20 +32,20 @@ sort = False
 make_model = False
 
 
-DM = DataManager(json_path, sets, inputs_path, labels_path, data_pct)
+JM = JSONManager(json_path, sets, inputs_path, labels_path, data_pct)
 MU = ModelUtils()
 
 
 if download:
-    DM.download_training_set()
+    JM.download_training_set()
 if sort:
-    DM.sort_data()
+    JM.sort_dataset()
 
-x_train, y_train = DM.load_dataset(train_path+inputs_path, train_path+labels_path)
-x_val, y_val = DM.load_dataset(valid_path+inputs_path, valid_path+labels_path)
-x_train, y_train = DM.normalize_data(x_train,y_train)
+x_train, y_train = JM.load_dataset(train_path+inputs_path, train_path+labels_path)
+x_val, y_val = JM.load_dataset(valid_path+inputs_path, valid_path+labels_path)
+x_train, y_train = JM.normalize_dataset(x_train,y_train)
 
-if make_model == True:
+if make_model:
     y_train2 = y_train[:, :, :, 0]
     y_train = np.expand_dims(y_train2, axis=-1)
 
