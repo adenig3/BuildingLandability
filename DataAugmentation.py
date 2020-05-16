@@ -13,8 +13,23 @@ class DataAugmentation:
         self.croppath = 'D:/acb/Stanford/CS230/cowc-everything/cowc/datasets/patch_sets/counting/COWC_Counting_Utah_AGRC/Utah_AGRC/train/cropped/'
         self.inp_file = self.basepath + png_file
         self.crop_file = self.croppath + png_file[:-4] + '_crop.png'
-        #os.environ['PATH'] += ':' + 'D:/acb/Stanford/CS230/cowc-everything/cowc/datasets/patch_sets/counting/COWC_Counting_Utah_AGRC/Utah_AGRC/train/'
-        #sys.path.append(dirname('D:/acb/Stanford/CS230/cowc-everything/cowc/datasets/patch_sets/counting/COWC_Counting_Utah_AGRC/Utah_AGRC/train/'))
+
+    def cropBorder(self, plt_flag=False, save_orig=True):
+        """
+        Crops the border off an image, assumes the left/right borders are same thickness and top/bottom borders are same thickness.
+        :param plt_flag: Boolean governing plotting of cropped image.
+        :param save_orig: Boolean governing whether the original image is saved or deleted.
+        """
+        img = self.readPng()
+        nx, ny, nz = img.shape  # find number of pixels of image
+        height_pct, width_pct = self.findBorder(img)  # find fraction of the image height/width that are border
+        crop_img = img[round(width_pct*nx):round((1-width_pct)*nx)-1,round(height_pct*ny):round((1-height_pct)*ny)-1,:]  # crop the image
+        cv2.imwrite(self.crop_file,crop_img)
+        if plt_flag:
+            self.plotImage(crop_img)
+        if not save_orig:
+            os.remove(self.inp_file)
+        return
 
     def findBorder(self, img):
         """
@@ -55,23 +70,6 @@ class DataAugmentation:
         Read in image file.
         """
         return cv2.imread(self.inp_file)
-
-    def cropBorder(self, plt_flag=False, save_orig=True):
-        """
-        Crops the border off an image, assumes the left/right borders are same thickness and top/bottom borders are same thickness.
-        :param plt_flag: Boolean governing plotting of cropped image.
-        :param save_orig: Boolean governing whether the original image is saved or deleted.
-        """
-        img = self.readPng()
-        nx, ny, nz = img.shape  # find number of pixels of image
-        height_pct, width_pct = self.findBorder(img)  # find fraction of the image height/width that are border
-        crop_img = img[round(width_pct*nx):round((1-width_pct)*nx)-1,round(height_pct*ny):round((1-height_pct)*ny)-1,:]  # crop the image
-        cv2.imwrite(self.crop_file,crop_img)
-        if plt_flag:
-            self.plotImage(crop_img)
-        if not save_orig:
-            os.remove(self.inp_file)
-        return
 
 
 if __name__ == '__main__':
