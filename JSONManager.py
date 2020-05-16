@@ -7,7 +7,7 @@ import random
 import shutil
 
 
-class DataManager:
+class JSONManager:
     def __init__(self, json_path, sets_to_include, inputs_path, labels_path, data_pct):
         self.json_path = json_path
         self.sets_to_include = sets_to_include
@@ -42,7 +42,7 @@ class DataManager:
                 i += 1
         return
 
-    def sort_data(self):
+    def sort_dataset(self):
         input_filenames = os.listdir(self.inputs_path)
         label_filenames = os.listdir(self.labels_path)
         if len(input_filenames) != len(label_filenames):
@@ -112,10 +112,10 @@ class DataManager:
         y = np.asarray(y)
         return x, y
 
-    def normalize_data(self,x,y):
+    def normalize_dataset(self,x,y):
         return x/255, y/255
 
-    def show_example(self, x, y, example_num):
+    def show_input_label(self, x, y, example_num):
         img_concat = np.concatenate((x[example_num], y[example_num]), axis=1)
         cv2.imshow('Input/Label ' + str(example_num), img_concat)
         cv2.waitKey(0)
