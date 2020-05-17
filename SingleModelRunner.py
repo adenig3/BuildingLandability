@@ -23,12 +23,13 @@ load_path = 'Models/UNet.h5'
 
 image_size = 192
 epochs = 70
+lambd = 0.0
 batch_size = None
 data_pct = [0.8, 0.1, 0.1]  # percent of data for training, validation, and test
 
 # General parameters
 download = False
-sort = False
+sort = True
 make_model = False
 
 
@@ -51,7 +52,7 @@ if make_model:
     y_train = np.expand_dims(y_train2, axis=-1)
     y_val = np.expand_dims(y_val2, axis=-1)
 
-    model = UNet([16, 32, 64, 128, 256], image_size)
+    model = UNet([16, 32, 64, 128, 256], image_size, lambd)
     model = model.configure()
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
     model.summary()
