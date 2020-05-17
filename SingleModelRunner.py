@@ -56,18 +56,13 @@ if make_model:
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
     model.summary()
 
-<<<<<<< HEAD:Model.py
     model.fit(x=x_train, y=y_train, batch_size=None, epochs=100, verbose=2)  # validation_data=[x_val,y_val]
-=======
     model.fit(x=x_train, y=y_train, batch_size=batch_size, epochs=epochs, verbose=2)  # validation_data=[x_val,y_val]
->>>>>>> de45e99bc06cbe350ff4872f614d7012229b7de2:SingleModelRunner.py
     MU.save_model(model, save_path)
 else:
     model = MU.load_model(load_path)
 
-
-
-#MU.show_validation(model,x_val, y_val)
+MU.show_validation(model,x_val, y_val)
 MU.show_train(model,x_train, y_train)
 
 
