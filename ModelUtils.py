@@ -7,7 +7,7 @@ class ModelUtils:
         model.save(save_path)
 
     def load_model(self,  load_path):
-        return keras.models.load_model(load_path)
+        return keras.models.load_model(load_path, compile=False)
 
     def show_validation(self, model, x_val, y_val):
         for ind in range(x_val.shape[0]):

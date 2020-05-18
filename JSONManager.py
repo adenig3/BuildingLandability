@@ -27,7 +27,7 @@ class JSONManager:
             os.mkdir(self.labels_path)
         i = 0
         json_data = self.read_json()
-        json_data = json_data[2527:] #Delete 372
+        #json_data = json_data[2527:] #Delete 372
         i = 2527
         for example in json_data:
             input_fullpath = self.inputs_path + 'Input' + str(i) + '.png'
