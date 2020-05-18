@@ -2,7 +2,10 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import regularizers
 
-class UNet:
+
+""" Encoder/Decoder architecture using standard layers
+    Look at using BatchNormalization soon"""
+class UNet: #Should probably try to include batch normalization
     def __init__(self, num_filters, image_size):
         self.num_filters = num_filters
         self.image_size = image_size
