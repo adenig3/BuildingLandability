@@ -33,6 +33,6 @@ class ModelUtils:
             grey_line[:, :, ] = 128
             img_concat = np.concatenate((result, np.concatenate((grey_line, truth[:, :, 0]), axis=1)), axis=1)
             cv2.imshow('Train: Prediction vs. Truth', img_concat)
-            cv2.imshow('Validation: Input', x_train[ind])
+            cv2.imshow('Train: Input', x_train[ind])
             cv2.waitKey(0)
             cv2.destroyAllWindows()
