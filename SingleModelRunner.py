@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from JSONManager import JSONManager
 from ModelUtils import ModelUtils
-from Models.UNet import UNet
+from Models.UNet import UNet, UNetBatchNorm
 from Models.SegNet import SegNet
 import tensorflow as tf
 from tensorflow import keras
@@ -17,8 +17,8 @@ json_path ="export-2020-05-15T13_40_03.223Z.json"
 sets = ['main set 1']
 inputs_path = 'Inputs/'
 labels_path = 'Labels/'
-save_path = 'Models/SegNet.h5'
-load_path = 'Models/SegNet.h5'
+save_path = 'Models/UNet_Batch_Norm.h5'
+load_path = 'Models/UNet_Batch_Norm.h5'
 #load_path = 'ModelFile.h5'
 
 
@@ -52,14 +52,14 @@ if make_model:
     y_train = np.expand_dims(y_train2, axis=-1)
     y_val = np.expand_dims(y_val2, axis=-1)
 
-    #model = UNet([16, 32, 64, 128, 256], image_size)
-    #model = UNet([64, 128, 256, 512], image_size)
+    #model = UNet([16, 32, 64, 128, 256], image_size, 0)
+    #model = UNet([64, 128, 256, 512], image_size,  0)
     #model = SegNet([64, 128, 256, 512], image_size)
-    model = SegNet([16, 32, 64, 128, 256], image_size)
+    #model = SegNet([16, 32, 64, 128, 256], image_size)
+    model = UNetBatchNorm([16, 32, 64, 128, 256], image_size, 0)
     model = model.configure()
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc"])
     model.summary()
-
     model.fit(x=x_train, y=y_train, batch_size=batch_size, epochs=epochs, verbose=2)  # validation_data=[x_val,y_val]
     MU.save_model(model, save_path)
 else:
@@ -71,9 +71,12 @@ MU.show_train(model,x_train, y_train)
 
 """ Future Ideas:
 1) Integrate Batch Normalization into standard UNet
-2) Look at using pre-trained weights for diff encoders
+2) Look at using pre-trained weights for diff encoders (imagenet weights) and transfer learning the decoder
 3) Look into regularization or drouput
 4) Consider increasing  number of filters per layer for deeper conv blocks"""
 
+
+"""Commments:
+1) Unet works pretty well without any regularization. Suffers a bit from """
 
 
