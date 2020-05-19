@@ -13,6 +13,7 @@ import openpyxl
 from JSONManager import JSONManager
 from ModelUtils import ModelUtils
 from Models.UNet import UNet
+from Models.SegNet import SegNet
 
 class HyperparamStudy:
 
