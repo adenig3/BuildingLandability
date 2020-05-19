@@ -28,8 +28,9 @@ class JSONManager:
         i = 0
         json_data = self.read_json()
         #json_data = json_data[2527:] #Delete 372
-        i = 2527
-        for example in json_data:
+        #i = 2527
+        for i in range(len(json_data)):
+            example = json_data[i]
             input_fullpath = self.inputs_path + 'Input' + str(i) + '.png'
             label_fullpath = self.labels_path + 'Label' + str(i) + '.png'
             img_url = example['Labeled Data']
@@ -40,12 +41,17 @@ class JSONManager:
                 i += 1
                 continue
             if example['Dataset Name'] in self.sets_to_include: #Include dataset names
-                urllib.request.urlretrieve(img_url, input_fullpath)  # Raw Input Image
-                urllib.request.urlretrieve(mask_url, label_fullpath)
-                if mask_type == "Not Landable Zone":  # Invert the Image
-                    img = cv2.imread(label_fullpath)
-                    cv2.imwrite(label_fullpath, 255 - img)
-                i += 1
+                try:
+                    urllib.request.urlretrieve(img_url, input_fullpath)  # Raw Input Image
+                    urllib.request.urlretrieve(mask_url, label_fullpath)
+                    if mask_type == "Not Landable Zone":  # Invert the Image
+                        img = cv2.imread(label_fullpath)
+                        cv2.imwrite(label_fullpath, 255 - img)
+                    i += 1
+                except:
+                    i -= 1 #Trey again
+                    print("Trying again")
+                    continue
         return
 
     def sort_dataset(self):
