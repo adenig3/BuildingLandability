@@ -5,10 +5,11 @@ from keras import regularizers
 
 """ Encoder/Decoder architecture using standard layers"""
 class UNetBatchNorm: #Should probably try to include batch normalization
-    def __init__(self, num_filters, image_size, lamb):
+    def __init__(self, num_filters, image_size, lambd, dropout_rate):
         self.num_filters = num_filters
         self.image_size = image_size
-        self.lamb = lamb
+        self.lambd = lambd
+        self.dropout_rate = dropout_rate
 
     def configure(self):
         if len(self.num_filters) != 5:
@@ -32,11 +33,13 @@ class UNetBatchNorm: #Should probably try to include batch normalization
         return model
 
     def down_block(self, x, filters, kernel_size=(3, 3), padding="same", strides=1):
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lamb))(x)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lambd))(x)
         c = keras.layers.BatchNormalization()(c)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         c = keras.layers.Activation('relu')(c)
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lamb))(c)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lambd))(c)
         c = keras.layers.BatchNormalization()(c)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         c = keras.layers.Activation('relu')(c)
         p = keras.layers.MaxPool2D((2, 2), (2, 2))(c)
         return c, p
@@ -44,27 +47,32 @@ class UNetBatchNorm: #Should probably try to include batch normalization
     def up_block(self, x, skip, filters, kernel_size=(3, 3), padding="same", strides=1):
         us = keras.layers.UpSampling2D((2, 2))(x)
         concat = keras.layers.Concatenate()([us, skip])
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lamb))(concat)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lambd))(concat)
         c = keras.layers.BatchNormalization()(c)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         c = keras.layers.Activation('relu')(c)
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lamb))(c)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, kernel_regularizer=regularizers.l2(self.lambd))(c)
         c = keras.layers.BatchNormalization()(c)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         c = keras.layers.Activation('relu')(c)
         return c
 
     def bottleneck(self, x, filters, kernel_size=(3, 3), padding="same", strides=1):
         c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides)(x)
         c = keras.layers.BatchNormalization()(c)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         c = keras.layers.Activation('relu')(c)
         c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides)(c)
         c = keras.layers.BatchNormalization()(c)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         c = keras.layers.Activation('relu')(c)
         return c
 class UNet: #Should probably try to include batch normalization
-    def __init__(self, num_filters, image_size, lamb):
+    def __init__(self, num_filters, image_size, lambd, dropout_rate):
         self.num_filters = num_filters
         self.image_size = image_size
-        self.lamb = lamb
+        self.lambd = lambd
+        self.dropout_rate = dropout_rate
 
     def configure(self):
         if len(self.num_filters) != 5:
@@ -88,23 +96,28 @@ class UNet: #Should probably try to include batch normalization
         return model
 
     def down_block(self, x, filters, kernel_size=(3, 3), padding="same", strides=1):
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lamb))(x)
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lamb))(c)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lambd))(x)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lambd))(c)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         p = keras.layers.MaxPool2D((2, 2), (2, 2))(c)
         return c, p
 
     def up_block(self, x, skip, filters, kernel_size=(3, 3), padding="same", strides=1):
         us = keras.layers.UpSampling2D((2, 2))(x)
         concat = keras.layers.Concatenate()([us, skip])
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lamb))(concat)
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lamb))(c)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lambd))(concat)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
+        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lambd))(c)
         return c
 
     def bottleneck(self, x, filters, kernel_size=(3, 3), padding="same", strides=1):
         if self.lambd == 0:
             c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(x)
+            c = keras.layers.Dropout(self.dropout_rate)(c)
             c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
         else:
             c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(x)
+            c = keras.layers.Dropout(self.dropout_rate)(c)
             c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(c)
         return c
