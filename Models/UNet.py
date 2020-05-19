@@ -1,11 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import regularizers
 
 class UNet:
-    def __init__(self, num_filters, image_size):
+    def __init__(self, num_filters, image_size, lambd):
         self.num_filters = num_filters
         self.image_size = image_size
+        self.lambd = lambd
 
     def configure(self):
         if len(self.num_filters) != 5:
@@ -29,19 +29,31 @@ class UNet:
         return model
 
     def down_block(self, x, filters, kernel_size=(3, 3), padding="same", strides=1):
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(x)
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
+        if self.lambd == 0:
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(x)
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
+        else:
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(x)
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(c)
         p = keras.layers.MaxPool2D((2, 2), (2, 2))(c)
         return c, p
 
     def up_block(self, x, skip, filters, kernel_size=(3, 3), padding="same", strides=1):
         us = keras.layers.UpSampling2D((2, 2))(x)
         concat = keras.layers.Concatenate()([us, skip])
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(concat)
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
+        if self.lambd == 0:
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(concat)
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
+        else:
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(concat)
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(c)
         return c
 
     def bottleneck(self, x, filters, kernel_size=(3, 3), padding="same", strides=1):
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(x)
-        c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
+        if self.lambd == 0:
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(x)
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu")(c)
+        else:
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(x)
+            c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=keras.regularizers.l2(self.lambd))(c)
         return c
