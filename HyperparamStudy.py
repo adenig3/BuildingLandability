@@ -13,12 +13,13 @@ import openpyxl
 from JSONManager import JSONManager
 from ModelUtils import ModelUtils
 from Models.UNet import UNet
+from Models.UNet import UNetBatchNorm
 from Models.SegNet import SegNet
 
 class HyperparamStudy:
 
     def __init__(self, image_size=192, nn_type="UNet", n_layers=9, learning_rate=0.1, decay_rate=0.0, lr_decay_scheme="exp", lambd=0.0,
-                 batch_size=64, epochs=100, optimizer="adam", loss="binary_crossentropy", plot_flag=False):
+                 dropout_rate=0.0, batch_size=64, batch_norm=False, epochs=100, optimizer="adam", loss="binary_crossentropy", plot_flag=False):
         self.image_size = image_size
         self.nn_type = nn_type
         self.n_layers = n_layers
@@ -26,7 +27,9 @@ class HyperparamStudy:
         self.decay_rate = decay_rate
         self.lr_decay_scheme = lr_decay_scheme
         self.lambd = lambd
+        self.dropout_rate = dropout_rate
         self.batch_size = batch_size
+        self.batch_norm = batch_norm
         self.epochs = epochs
         self.optimizer = optimizer
         self.loss = loss
@@ -43,11 +46,11 @@ class HyperparamStudy:
         self.inputs_path = 'Inputs/'
         self.labels_path = 'Labels/'
         self.data_pct = [0.9, 0.05, 0.05]
-        self.save_path = "Models/" + nn_type + "n" + str(n_layers) + "lr" + str(learning_rate) + "dr" + str(decay_rate) \
-            + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
+        self.save_path = "Models/" + nn_type + "n" + str(n_layers) + "lr" + str(learning_rate) + "dor" + str(dropout_rate) \
+                         + "dr" + str(decay_rate) + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
         self.save_path = self.save_path.replace(".","_") + ".h5" # replaces decimal points with underscores to prevent mess-ups in file name
-        self.load_path = "Models/" + nn_type + "n" + str(n_layers) + "lr" + str(learning_rate) + "dr" + str(decay_rate) \
-            + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
+        self.load_path = "Models/" + nn_type + "n" + str(n_layers) + "lr" + str(learning_rate) + "dor" + str(dropout_rate) \
+                         + "dr" + str(decay_rate) + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
         self.load_path = self.load_path.replace(".","_") + ".h5" # replaces decimal points with underscores to prevent mess-ups in file name
         self.output_path = "Hyperparameters_Data.xlsx"
 
@@ -64,7 +67,13 @@ class HyperparamStudy:
 
         if self.nn_type == "UNet":
             num_filters = [2**(4+i) for i in range(math.ceil(self.n_layers/2))]  # number of filters in each layer is a power of 2 starting at 16 up to bottleneck
-            self.model = UNet(num_filters, self.image_size, self.lambd)
+            if self.batch_norm:
+                self.model = UNetBatchNorm(num_filters, self.image_size, self.lambd, self.dropout_rate)
+            else:
+                self.model = UNet(num_filters, self.image_size, self.lambd, self.dropout_rate)
+        elif self.nn_type == "SegNet":
+            num_filters = [2**(4+i) for i in range(4)]
+            self.model = SegNet(num_filters, self.image_size)
         #elif self.nn_type == "ResNet":
             #self.model = ResNet(, self.image_size)
         else:
@@ -146,12 +155,13 @@ class HyperparamStudy:
             ws1['D1'] = 'Decay Rate'
             ws1['E1'] = 'Decay Scheme'
             ws1['F1'] = 'Lambda'
-            ws1['G1'] = 'Mini-batch Size'
-            ws1['H1'] = 'Epochs'
-            ws1['I1'] = 'Optimizer'
-            ws1['J1'] = 'Loss'
-            ws1['K1'] = 'Average Training Error'
-            ws1['L1'] = 'Average Validation Error'
+            ws1['G1'] = 'Dropout Rate'
+            ws1['H1'] = 'Mini-batch Size'
+            ws1['I1'] = 'Epochs'
+            ws1['J1'] = 'Optimizer'
+            ws1['K1'] = 'Loss'
+            ws1['L1'] = 'Average Training Error'
+            ws1['M1'] = 'Average Validation Error'
         else:
             wb = openpyxl.load_workbook(filename=self.output_path)
             ws1 = wb.active
@@ -162,12 +172,13 @@ class HyperparamStudy:
         ws1["D"+str(row)] = self.decay_rate
         ws1["E"+str(row)] = self.lr_decay_scheme
         ws1["F"+str(row)] = self.lambd
-        ws1["G"+str(row)] = self.batch_size
-        ws1["H"+str(row)] = self.epochs
-        ws1["I"+str(row)] = self.optimizer
-        ws1["J"+str(row)] = self.loss
-        ws1["K"+str(row)] = self.training_score
-        ws1["L"+str(row)] = self.validation_score
+        ws1["G"+str(row)] = self.dropout_rate
+        ws1["H"+str(row)] = self.batch_size
+        ws1["I"+str(row)] = self.epochs
+        ws1["J"+str(row)] = self.optimizer
+        ws1["K"+str(row)] = self.loss
+        ws1["L"+str(row)] = self.training_score
+        ws1["M"+str(row)] = self.validation_score
         wb.save(filename=self.output_path)
         return
 
@@ -178,6 +189,7 @@ if __name__ == '__main__':
     nn_type = ["UNet"]  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
     n_layers = np.array([9])
     learning_rate = np.array([0.1])
+    dropout_rate = np.array([0.2])
     decay_rate = np.array([0.96])
     lr_decay_scheme = ["exp"]
     lambd = np.array([0.4])
@@ -191,7 +203,7 @@ if __name__ == '__main__':
 
     for i in range(num_iter):
         HPS = HyperparamStudy(image_size=image_size[i], nn_type=nn_type[i], n_layers=n_layers[i], learning_rate=learning_rate[i],
-                              decay_rate=decay_rate[i], lr_decay_scheme=lr_decay_scheme[i],lambd=lambd[i], batch_size=batch_size[i],
-                              epochs=epochs[i], optimizer=optimizer[i], loss=loss[i],plot_flag=plot_flag)
+                              dropout_rate=dropout_rate[i], decay_rate=decay_rate[i], lr_decay_scheme=lr_decay_scheme[i],lambd=lambd[i],
+                              batch_size=batch_size[i], epochs=epochs[i], optimizer=optimizer[i], loss=loss[i],plot_flag=plot_flag)
         HPS.runner()
         HPS.write()
