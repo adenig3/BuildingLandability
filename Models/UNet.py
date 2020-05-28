@@ -100,7 +100,7 @@ class UNet: #Should probably try to include batch normalization
         concat = keras.layers.Concatenate()([us, skip])
         c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lamb))(concat)
         c = keras.layers.Conv2D(filters, kernel_size, padding=padding, strides=strides, activation="relu", kernel_regularizer=regularizers.l2(self.lamb))(c)
-        concat = keras.layers.Dropout(self.dropout_rate)(concat)
+        c = keras.layers.Dropout(self.dropout_rate)(c)
         return c
 
     def bottleneck(self, x, filters, kernel_size=(3, 3), padding="same", strides=1):

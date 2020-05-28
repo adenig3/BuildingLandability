@@ -192,18 +192,18 @@ class HyperparamStudy:
 
 if __name__ == '__main__':
     # Fill these np.arrays with as many options as user wishes (should all be same length)
-    image_size = [192]*4
-    nn_type = ["UNet"]*4  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
-    n_layers = 9*np.ones((4,))
-    learning_rate = 0.001*np.ones((4,))
-    dropout_rate = np.array([0.6,0.6,0.6,0.6])
-    decay_rate = np.zeros((4,))
-    lr_decay_scheme = ["exp"]*4
-    lambd = np.array([0.0,0.5,0.0,0.5])*1e-4
-    batch_size = np.array([32,32,64,64])
-    epochs = [70]*4
-    optimizer = ["adam"]*4
-    loss = ["binary_crossentropy"]*4
+    image_size = [192]*9
+    nn_type = ["UNet"]*9  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
+    n_layers = 9*np.ones((9,))
+    learning_rate = 0.001*np.ones((9,))
+    dropout_rate = np.array([0.6,0.6,0.6,0.7,0.7,0.7,0.75,0.75,0.75])
+    decay_rate = np.zeros((9,))
+    lr_decay_scheme = ["exp"]*9
+    lambd = np.array([0.0,0.0,0.1,0.0,0.0,0.1,0.0,0.0,0.1])*1e-4
+    batch_size = np.array([32,16,32,32,16,32,32,16,32])
+    epochs = [100] + [70]*8
+    optimizer = ["adam"]*9
+    loss = ["binary_crossentropy"]*9
     plot_flag = False
 
     num_iter = len(image_size)
