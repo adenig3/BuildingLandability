@@ -7,10 +7,14 @@ import sys
 
 class DataAugmentation:
 
-    def __init__(self, png_file):
+    def __init__(self, png_file, save_path):
         # change to the directory containing Utah satellite images
         self.basepath = 'D:/acb/Stanford/CS230/cowc-everything/cowc/datasets/patch_sets/counting/COWC_Counting_Utah_AGRC/Utah_AGRC/train/'
         self.croppath = 'D:/acb/Stanford/CS230/cowc-everything/cowc/datasets/patch_sets/counting/COWC_Counting_Utah_AGRC/Utah_AGRC/train/cropped/'
+        self.basepath_train_inputs_seraj = 'D:/Stanford/Research/GitHub/BuildingLandability/train/Inputs'
+        self.basepath_train_labels_seraj = 'D:/Stanford/Research/GitHub/BuildingLandability/train/Labels'
+        self.input_save_path = save_path + '/Inputs'
+        self.label_save_path = save_path + '/Labels' #Where to save the augmented data
         self.inp_file = self.basepath + png_file
         self.crop_file = self.croppath + png_file[:-4] + '_crop.png'
 
@@ -55,6 +59,80 @@ class DataAugmentation:
                 break
             i += 1
         return height_pct, width_pct
+
+    def flipBlack(self, lr, ud):
+        """
+        :return: all the flipped images corresponding to flipped black images
+        """
+        input_filenames = os.listdir(self.basepath_train_inputs_seraj)
+        label_filenames = os.listdir(self.basepath_train_labels_seraj)
+        last_num = int(input_filenames[len(input_filenames)-1][5:-4])
+        i = last_num
+        for input_file, label_file in input_filenames, label_filenames:
+            input = cv2.imread(input_file)
+            label = cv2.imread(label_file)
+            if np.sum(np.sum(label)) == 0: #All black
+                flippedlr_input = np.fliplr(input)
+                flippedlr_label = np.fliplr(label)
+                flippedud_input = np.flipud(input)
+                flippedud_label = np.flipud(label)
+                if lr:
+                    cv2.imwrite(self.input_save_path + str(i) + '.png', flippedlr_input)
+                    cv2.imwrite(self.label_save_path + str(i) + '.png', flippedlr_label)
+                    i +=1
+                if ud:
+                    cv2.imwrite(self.input_save_path + str(i) + '.png', flippedud_input)
+                    cv2.imwrite(self.label_save_path + str(i) + '.png', flippedud_label)
+                    i += 1
+
+    def flipWhite(self, lr, ud):
+        """
+        :return: all the flipped images corresponding to flipped white images
+        """
+        input_filenames = os.listdir(self.basepath_train_inputs_seraj)
+        label_filenames = os.listdir(self.basepath_train_labels_seraj)
+        last_num = int(input_filenames[len(input_filenames)-1][5:-4])
+        i = last_num
+        for input_file, label_file in input_filenames, label_filenames:
+            input = cv2.imread(input_file)
+            label = cv2.imread(label_file)
+            if np.mean(np.mean(label)) == 1: #All white
+                flippedlr_input = np.fliplr(input)
+                flippedlr_label = np.fliplr(label)
+                flippedud_input = np.flipud(input)
+                flippedud_label = np.flipud(label)
+                if lr:
+                    cv2.imwrite(self.input_save_path + str(i) + '.png', flippedlr_input)
+                    cv2.imwrite(self.label_save_path + str(i) + '.png', flippedlr_label)
+                    i +=1
+                if ud:
+                    cv2.imwrite(self.input_save_path + str(i) + '.png', flippedud_input)
+                    cv2.imwrite(self.label_save_path + str(i) + '.png', flippedud_label)
+                    i += 1
+
+    def flipAll(self, lr, ud):
+        """
+        :return: all the flipped images corresponding
+        """
+        input_filenames = os.listdir(self.basepath_train_inputs_seraj)
+        label_filenames = os.listdir(self.basepath_train_labels_seraj)
+        last_num = int(input_filenames[len(input_filenames) - 1][5:-4])
+        i = last_num
+        for input_file, label_file in input_filenames, label_filenames:
+            input = cv2.imread(input_file)
+            label = cv2.imread(label_file)
+            flippedlr_input = np.fliplr(input)
+            flippedlr_label = np.fliplr(label)
+            flippedud_input = np.flipud(input)
+            flippedud_label = np.flipud(label)
+            if lr:
+                cv2.imwrite(self.input_save_path + str(i) + '.png', flippedlr_input)
+                cv2.imwrite(self.label_save_path + str(i) + '.png', flippedlr_label)
+                i += 1
+            if ud:
+                cv2.imwrite(self.input_save_path + str(i) + '.png', flippedud_input)
+                cv2.imwrite(self.label_save_path + str(i) + '.png', flippedud_label)
+                i += 1
 
     def plotImage(self, img):
         """
