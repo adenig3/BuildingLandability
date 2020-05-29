@@ -3,5 +3,5 @@ train/
 test/
 validate/
 .idea/
-__pycache__/
+__pycache__\
 Models\__pycache__\
