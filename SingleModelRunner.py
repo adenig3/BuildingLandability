@@ -32,7 +32,7 @@ data_pct = [0.95, 0.025, 0.025]  # percent of data for training, validation, and
 # General parameters
 download = False
 sort = False
-make_model = True
+make_model = False
 
 
 JM = JSONManager(json_path, sets, inputs_path, labels_path, data_pct)

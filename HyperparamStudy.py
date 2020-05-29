@@ -37,6 +37,7 @@ class HyperparamStudy:
         self.model = None
         self.training_score = 0
         self.validation_score = 0
+        self.iou = 0
 
         # most of those variables won't change, if they need to change, change by hand
         self.train_path = "train/"
@@ -64,6 +65,9 @@ class HyperparamStudy:
         x_train, y_train = JM.normalize_dataset(x_train,y_train)
         y_train2 = y_train[:, :, :, 0]
         y_train = np.expand_dims(y_train2, axis=-1)
+        x_val, y_val = JM.normalize_dataset(x_val,y_val)
+        y_val2 = y_val[:, :, :, 0]
+        y_val = np.expand_dims(y_val2, axis=-1)
 
         if self.nn_type == "UNet":
             num_filters = [2**(4+i) for i in range(math.ceil(self.n_layers/2))]  # number of filters in each layer is a power of 2 starting at 16 up to bottleneck
@@ -97,7 +101,7 @@ class HyperparamStudy:
                 opt = keras.optimizers.SGD(learning_rate=self.learning_rate)
             else:
                 raise Exception("Please enter a valid optimizer.")
-            self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc"])
+            self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
             self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, verbose=2)
         elif self.lr_decay_scheme == "time":
@@ -107,7 +111,7 @@ class HyperparamStudy:
                 opt = keras.optimizers.SGD(learning_rate=learning_rate, decay=self.decay_rate)
             else:
                 raise Exception("Please enter a valid optimizer.")
-            self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc"])
+            self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
             self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, verbose=2)
         else:
@@ -129,12 +133,13 @@ class HyperparamStudy:
                     raise Exception("Please enter a valid optimizer.")
             else:
                 raise Exception("Please enter a valid learning rate decay scheme.")
-            self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc"])
+            self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
             self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, callbacks=[callback], verbose=2)
 
-        self.training_score = self.model.evaluate(x_train, y_train, verbose=0)
-        self.validation_score = self.model.evaluate(x_val, y_val, verbose=0)
+        self.training_score = self.model.evaluate(x_train, y_train, verbose=0)[1]
+        self.validation_score = self.model.evaluate(x_val, y_val, verbose=0)[1]
+        self.iou = tf.keras.metrics.MeanIoU(num_classes=2).result().numpy()
         MU.save_model(self.model, self.save_path)
 
         if self.plot_flag:
@@ -162,6 +167,7 @@ class HyperparamStudy:
             ws1['K1'] = 'Loss'
             ws1['L1'] = 'Average Training Error'
             ws1['M1'] = 'Average Validation Error'
+            ws1['N1'] = 'IoU'
         else:
             wb = openpyxl.load_workbook(filename=self.output_path)
             ws1 = wb.active
@@ -179,27 +185,28 @@ class HyperparamStudy:
         ws1["K"+str(row)] = self.loss
         ws1["L"+str(row)] = self.training_score
         ws1["M"+str(row)] = self.validation_score
+        ws1["N"+str(row)] = self.iou
         wb.save(filename=self.output_path)
         return
 
 
 if __name__ == '__main__':
     # Fill these np.arrays with as many options as user wishes (should all be same length)
-    image_size = np.array([192])
-    nn_type = ["UNet"]  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
-    n_layers = np.array([9])
-    learning_rate = np.array([0.1])
-    dropout_rate = np.array([0.2])
-    decay_rate = np.array([0.96])
-    lr_decay_scheme = ["exp"]
-    lambd = np.array([0.4])
-    batch_size = np.array([64])
-    epochs = np.array([100])
-    optimizer = ["adam"]
-    loss = ["binary_crossentropy"]
+    image_size = [192]*9
+    nn_type = ["UNet"]*9  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
+    n_layers = 9*np.ones((9,))
+    learning_rate = 0.001*np.ones((9,))
+    dropout_rate = np.array([0.6,0.6,0.6,0.7,0.7,0.7,0.75,0.75,0.75])
+    decay_rate = np.zeros((9,))
+    lr_decay_scheme = ["exp"]*9
+    lambd = np.array([0.0,0.0,0.1,0.0,0.0,0.1,0.0,0.0,0.1])*1e-4
+    batch_size = np.array([32,16,32,32,16,32,32,16,32])
+    epochs = [100] + [70]*8
+    optimizer = ["adam"]*9
+    loss = ["binary_crossentropy"]*9
     plot_flag = False
 
-    num_iter = image_size.size
+    num_iter = len(image_size)
 
     for i in range(num_iter):
         HPS = HyperparamStudy(image_size=image_size[i], nn_type=nn_type[i], n_layers=n_layers[i], learning_rate=learning_rate[i],

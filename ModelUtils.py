@@ -1,6 +1,8 @@
 from tensorflow import keras
 import cv2
 import numpy as np
+import h5py
+
 # ASSUMES KERAS MODEL DATATYPE
 class ModelUtils:
     def save_model(self, model, save_path):
