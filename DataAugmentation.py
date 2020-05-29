@@ -116,24 +116,28 @@ class DataAugmentation:
         """
         input_filenames = os.listdir(self.basepath_train_inputs_seraj)
         label_filenames = os.listdir(self.basepath_train_labels_seraj)
-        last_num = int(input_filenames[len(input_filenames) - 1][5:-4])
-        i = last_num
-        for input_file, label_file in input_filenames, label_filenames:
-            input = cv2.imread(input_file)
-            label = cv2.imread(label_file)
+        nums = []
+        for input in input_filenames:
+            nums.append(int(input[5:-4]))
+        i = max(nums) + 1
+        count = 0
+        for input_file in input_filenames:
+            label_file = label_filenames[count]
+            input = cv2.imread(self.basepath_train_inputs_seraj +'/' +  input_file)
+            label = cv2.imread(self.basepath_train_labels_seraj + '/' + label_file)
             flippedlr_input = np.fliplr(input)
             flippedlr_label = np.fliplr(label)
             flippedud_input = np.flipud(input)
             flippedud_label = np.flipud(label)
             if lr:
-                cv2.imwrite(self.input_save_path + str(i) + '.png', flippedlr_input)
-                cv2.imwrite(self.label_save_path + str(i) + '.png', flippedlr_label)
+                cv2.imwrite(self.input_save_path + '/' + 'Input' + str(i) + '.png', flippedlr_input)
+                cv2.imwrite(self.label_save_path + '/' + 'Label' + str(i) + '.png', flippedlr_label)
                 i += 1
             if ud:
-                cv2.imwrite(self.input_save_path + str(i) + '.png', flippedud_input)
-                cv2.imwrite(self.label_save_path + str(i) + '.png', flippedud_label)
+                cv2.imwrite(self.input_save_path + '/' + 'Input' + str(i) + '.png', flippedud_input)
+                cv2.imwrite(self.label_save_path + '/' + 'Label' + str(i) + '.png', flippedud_label)
                 i += 1
-
+            count += 1
     def plotImage(self, img):
         """
         Plot the image.
