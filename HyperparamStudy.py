@@ -13,13 +13,12 @@ import openpyxl
 from JSONManager import JSONManager
 from ModelUtils import ModelUtils
 from Models.UNet import UNet
-from Models.UNet import UNetBatchNorm
 from Models.SegNet import SegNet
 
 class HyperparamStudy:
 
     def __init__(self, image_size=192, nn_type="UNet", n_layers=9, learning_rate=0.1, decay_rate=0.0, lr_decay_scheme="exp", lambd=0.0,
-                 dropout_rate=0.0, batch_size=64, batch_norm=False, epochs=100, optimizer="adam", loss="binary_crossentropy", plot_flag=False):
+                 dropout_rate=[0.0,0.0], batch_size=64, batch_norm=[False,False], epochs=100, optimizer="adam", loss="binary_crossentropy", plot_flag=False):
         self.image_size = image_size
         self.nn_type = nn_type
         self.n_layers = n_layers
@@ -71,10 +70,10 @@ class HyperparamStudy:
 
         if self.nn_type == "UNet":
             num_filters = [2**(4+i) for i in range(math.ceil(self.n_layers/2))]  # number of filters in each layer is a power of 2 starting at 16 up to bottleneck
-            if self.batch_norm:
-                self.model = UNetBatchNorm(num_filters, self.image_size, self.lambd, self.dropout_rate)
-            else:
-                self.model = UNet(num_filters, self.image_size, self.lambd, self.dropout_rate)
+            # if self.batch_norm:
+            #     self.model = UNetBatchNorm(num_filters, self.image_size, self.lambd, self.dropout_rate)
+            # else:
+            self.model = UNet(num_filters, self.image_size, self.lambd, self.dropout_rate, self.batch_norm)
         elif self.nn_type == "SegNet":
             num_filters = [2**(4+i) for i in range(4)]
             self.model = SegNet(num_filters, self.image_size)
@@ -168,6 +167,7 @@ class HyperparamStudy:
             ws1['L1'] = 'Average Training Error'
             ws1['M1'] = 'Average Validation Error'
             ws1['N1'] = 'IoU'
+            ws1['O1'] = 'Batch Norm Booleans'
         else:
             wb = openpyxl.load_workbook(filename=self.output_path)
             ws1 = wb.active
@@ -178,7 +178,7 @@ class HyperparamStudy:
         ws1["D"+str(row)] = self.decay_rate
         ws1["E"+str(row)] = self.lr_decay_scheme
         ws1["F"+str(row)] = self.lambd
-        ws1["G"+str(row)] = self.dropout_rate
+        ws1["G"+str(row)] = ' '.join([str(dr) for dr in self.dropout_rate])
         ws1["H"+str(row)] = self.batch_size
         ws1["I"+str(row)] = self.epochs
         ws1["J"+str(row)] = self.optimizer
@@ -186,6 +186,7 @@ class HyperparamStudy:
         ws1["L"+str(row)] = self.training_score
         ws1["M"+str(row)] = self.validation_score
         ws1["N"+str(row)] = self.iou
+        ws1["O"+str(row)] =  ' '.join([str(bn) for bn in self.batch_norm])
         wb.save(filename=self.output_path)
         return
 
@@ -196,11 +197,12 @@ if __name__ == '__main__':
     nn_type = ["UNet"]*9  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
     n_layers = 9*np.ones((9,))
     learning_rate = 0.001*np.ones((9,))
-    dropout_rate = np.array([0.6,0.6,0.6,0.7,0.7,0.7,0.75,0.75,0.75])
+    dropout_rate = np.array([[0.6,0.1],[0.6,0.1],[0.6,0.1],[0.7,0.1],[0.7,0.1],[0.7,0.1],[0.75,0.1],[0.75,0.1],[0.75,0.1]])
     decay_rate = np.zeros((9,))
     lr_decay_scheme = ["exp"]*9
-    lambd = np.array([0.0,0.0,0.1,0.0,0.0,0.1,0.0,0.0,0.1])*1e-4
+    lambd = np.array([0.0,0.0,0.1,0.0,0.0,0.1,0.0,0.0,0.1]) * 1e-4
     batch_size = np.array([32,16,32,32,16,32,32,16,32])
+    batch_norm = [[False,False]]*9
     epochs = [100] + [70]*8
     optimizer = ["adam"]*9
     loss = ["binary_crossentropy"]*9
@@ -211,6 +213,6 @@ if __name__ == '__main__':
     for i in range(num_iter):
         HPS = HyperparamStudy(image_size=image_size[i], nn_type=nn_type[i], n_layers=n_layers[i], learning_rate=learning_rate[i],
                               dropout_rate=dropout_rate[i], decay_rate=decay_rate[i], lr_decay_scheme=lr_decay_scheme[i],lambd=lambd[i],
-                              batch_size=batch_size[i], epochs=epochs[i], optimizer=optimizer[i], loss=loss[i],plot_flag=plot_flag)
+                              batch_size=batch_size[i], batch_norm=batch_norm[i], epochs=epochs[i], optimizer=optimizer[i], loss=loss[i],plot_flag=plot_flag)
         HPS.runner()
         HPS.write()
