@@ -32,7 +32,7 @@ data_pct = [0.95, 0.025, 0.025]  # percent of data for training, validation, and
 download = False
 sort = False
 augment = False
-make_model = False
+make_model = True
 
 
 JM = JSONManager(json_path, sets, inputs_path, labels_path, data_pct)
@@ -45,6 +45,7 @@ if sort:
     JM.sort_dataset()
 if augment:
     DA.flipAll(True, True)
+
 
 x_train, y_train = JM.load_dataset(train_path+inputs_path, train_path+labels_path)
 x_val, y_val = JM.load_dataset(valid_path+inputs_path, valid_path+labels_path)
@@ -63,8 +64,8 @@ if make_model:
     model = UNet([32, 64, 128, 256, 512], image_size, 0, [0.6, 0.0], [False, False])
     for i in range(0,5):
         if i == 0:
-            #model = model.configure()
-            model = MU.load_model(save_path)
+            model = model.configure()
+            #model = MU.load_model(save_path)
         else:
             model = MU.load_model(save_path)
         #model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["acc"])
