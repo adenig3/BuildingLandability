@@ -108,7 +108,7 @@ class HyperparamStudy:
             self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
             #Callbacks To Save every certain epochs
-            filepath = "Models/" + nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
+            filepath = "Models/" + self.nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
             filepath = filepath + "{epoch: 03d}"
             filepath = filepath.replace(".", "_") + ".h5"  # replaces decimal points with underscores to prevent mess-ups in file name
             cp = tf.keras.callbacks.ModelCheckpoint(filepath=filepath, period=int(round(self.epochs/self.saves_per_epoch)))
@@ -125,7 +125,7 @@ class HyperparamStudy:
             self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
             # Callbacks To Save every certain epochs
-            filepath = "Models/" + nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
+            filepath = "Models/" + self.nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
             filepath = filepath + "{epoch: 03d}"
             filepath = filepath.replace(".","_") + ".h5"  # replaces decimal points with underscores to prevent mess-ups in file name
             cp = tf.keras.callbacks.ModelCheckpoint(filepath=filepath, period=int(round(self.epochs / self.saves_per_epoch)))
@@ -153,7 +153,7 @@ class HyperparamStudy:
             self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
             # Callbacks To Save every certain epochs
-            filepath = "Models/" + nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
+            filepath = "Models/" + self.nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
             filepath = filepath + "{epoch: 03d}"
             filepath = filepath.replace(".","_") + ".h5"  # replaces decimal points with underscores to prevent mess-ups in file name
             cp = tf.keras.callbacks.ModelCheckpoint(filepath=filepath,period=int(round(self.epochs / self.saves_per_epoch)))
