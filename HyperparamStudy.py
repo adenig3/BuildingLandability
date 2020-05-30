@@ -41,6 +41,7 @@ class HyperparamStudy:
         # most of those variables won't change, if they need to change, change by hand
         self.train_path = "train/"
         self.valid_path = "validate/"
+        self.image_path = "images/"
         self.json_path ="export-2020-05-15T13_40_03.223Z.json"
         self.sets = ['main set 1']
         self.inputs_path = 'Inputs/'

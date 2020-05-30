@@ -11,8 +11,8 @@ class DataAugmentation:
         # change to the directory containing Utah satellite images
         self.basepath = 'D:/acb/Stanford/CS230/cowc-everything/cowc/datasets/patch_sets/counting/COWC_Counting_Utah_AGRC/Utah_AGRC/train/'
         self.croppath = 'D:/acb/Stanford/CS230/cowc-everything/cowc/datasets/patch_sets/counting/COWC_Counting_Utah_AGRC/Utah_AGRC/train/cropped/'
-        self.basepath_train_inputs_seraj = 'D:/Stanford/Research/GitHub/BuildingLandability/train/Inputs'
-        self.basepath_train_labels_seraj = 'D:/Stanford/Research/GitHub/BuildingLandability/train/Labels'
+        self.basepath_train_inputs_seraj = 'D:/acb/GitHub/BuildingLandability/train/Inputs'
+        self.basepath_train_labels_seraj = 'D:/acb/GitHub/BuildingLandability/train/Labels'
         self.input_save_path = save_path + '/Inputs'
         self.label_save_path = save_path + '/Labels' #Where to save the augmented data
         self.inp_file = self.basepath + png_file
