@@ -125,7 +125,12 @@ class JSONManager:
         return x, y
 
     def normalize_dataset(self,x,y):
-        return x/255, y/255
+        for i in range(x.shape[0]):
+            x[i] = x[i]/255
+            y[i] = y[i]/255
+
+
+        return x,y
 
     def show_input_label(self, x, y, example_num):
         img_concat = np.concatenate((x[example_num], y[example_num]), axis=1)
