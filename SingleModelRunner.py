@@ -8,6 +8,7 @@ from DataAugmentation import DataAugmentation
 from Models.VGG_UNet import VGG_UNet
 import tensorflow as tf
 from tensorflow import keras
+import pickle
 
 
 
@@ -31,21 +32,23 @@ data_pct = [0.95, 0.025, 0.025]  # percent of data for training, validation, and
 # General parameters
 download = False
 sort = False
+make_pickle = False
 augment = False
 make_model = True
 
 
 JM = JSONManager(json_path, sets, inputs_path, labels_path, data_pct)
 MU = ModelUtils()
-DA = DataAugmentation('Doesntmatter.png', 'D:/Stanford/Research/GitHub/BuildingLandability/train')
+DA = DataAugmentation('Doesntmatter.png', 'D:/acb/GitHub/BuildingLandability/train')
 
 if download:
     JM.download_training_set()
+
 if sort:
     JM.sort_dataset()
+
 if augment:
     DA.flipAll(True, True)
-
 
 x_train, y_train = JM.load_dataset(train_path+inputs_path, train_path+labels_path)
 x_val, y_val = JM.load_dataset(valid_path+inputs_path, valid_path+labels_path)
@@ -53,12 +56,36 @@ x_val, y_val = JM.load_dataset(valid_path+inputs_path, valid_path+labels_path)
 #y_train = np.invert(y_train)
 #y_val = np.invert(y_val)
 x_train, y_train = JM.normalize_dataset(x_train, y_train)
+y_train2 = y_train[:, :, :, 0]
+y_val2 = y_val[:, :, :, 0]
+y_train = np.expand_dims(y_train2, axis=-1)
+y_val = np.expand_dims(y_val2, axis=-1)
+# if make_pickle:
+#     x_train, y_train = JM.load_dataset(train_path+inputs_path, train_path+labels_path)
+#     x_val, y_val = JM.load_dataset(valid_path+inputs_path, valid_path+labels_path)
+#     #Invert dataset to test something
+#     #y_train = np.invert(y_train)
+#     #y_val = np.invert(y_val)
+#     x_train, y_train = JM.normalize_dataset(x_train, y_train)
+#     y_train2 = y_train[:, :, :, 0]
+#     y_val2 = y_val[:, :, :, 0]
+#     y_train = np.expand_dims(y_train2, axis=-1)
+#     y_val = np.expand_dims(y_val2, axis=-1)
+#     np.save('x_train.npy',x_train)
+#     np.save('y_train.npy',y_train)
+#     np.save('x_val.npy',x_val)
+#     np.save('y_val.npy',y_val)
+    # with open('train.pickle', 'wb') as f:
+    #     pickle.dump([x_train, y_train], f, protocol=4)
+    # with open('val.pickle', 'wb') as f:
+    #     pickle.dump([x_val, y_val], f, protocol=4)
+
+# with open('train.pickle', 'rb') as f:
+#     x_train, y_train = pickle.load(f)
+# with open('val.pickle', 'rb') as f:
+#     x_val, y_val = pickle.load(f)
 
 if make_model:
-    y_train2 = y_train[:, :, :, 0]
-    y_val2 = y_val[:, :, :, 0]
-    y_train = np.expand_dims(y_train2, axis=-1)
-    y_val = np.expand_dims(y_val2, axis=-1)
 
     #model = UNet([16, 32, 64, 128, 256], image_size, 0, [0.6, 0.05], [False, False])
     model = UNet([32, 64, 128, 256, 512], image_size, 0, [0.6, 0.0], [False, False])
@@ -106,5 +133,3 @@ MU.show_train(model,x_train, y_train)
 
 """Problems:
 1) Its can identify prominent edges, but doesnt know whether it's large enough, or if road/texture is appropriate"""
-
-

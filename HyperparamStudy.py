@@ -6,7 +6,7 @@ import numpy as np
 import os
 import random
 import shutil
-import matplotlib.pyplot as plt
+import matplotlib.image
 import tensorflow as tf
 from tensorflow import keras
 import openpyxl
@@ -14,14 +14,16 @@ from JSONManager import JSONManager
 from ModelUtils import ModelUtils
 from Models.UNet import UNet
 from Models.SegNet import SegNet
+import distutils.util
 
 class HyperparamStudy:
 
-    def __init__(self, image_size=192, nn_type="UNet", n_layers=9, learning_rate=0.1, decay_rate=0.0, lr_decay_scheme="exp", lambd=0.0,
+    def __init__(self, image_size=192, nn_type="UNet", n_layers=9, num_filters=[32,64,128,256,512], learning_rate=0.1, decay_rate=0.0, lr_decay_scheme="exp", lambd=0.0,
                  dropout_rate=[0.0,0.0], batch_size=64, batch_norm=[False,False], epochs=100, optimizer="adam", loss="binary_crossentropy", plot_flag=False):
         self.image_size = image_size
         self.nn_type = nn_type
         self.n_layers = n_layers
+        self.num_filters = num_filters
         self.learning_rate = learning_rate
         self.decay_rate = decay_rate
         self.lr_decay_scheme = lr_decay_scheme
@@ -41,16 +43,17 @@ class HyperparamStudy:
         # most of those variables won't change, if they need to change, change by hand
         self.train_path = "train/"
         self.valid_path = "validate/"
+        self.image_path = "Images/"
         self.json_path ="export-2020-05-15T13_40_03.223Z.json"
         self.sets = ['main set 1']
         self.inputs_path = 'Inputs/'
         self.labels_path = 'Labels/'
         self.data_pct = [0.9, 0.05, 0.05]
-        self.save_path = "Models/" + nn_type + "n" + str(n_layers) + "lr" + str(learning_rate) + "dor" + str(dropout_rate) \
-                         + "dr" + str(decay_rate) + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
+        self.save_path = "Models/" + nn_type + "n" + str(n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(learning_rate) + "dordown" + str(dropout_rate[0]) \
+                         + "dorup" + str(dropout_rate[1]) + "dr" + str(decay_rate) + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
         self.save_path = self.save_path.replace(".","_") + ".h5" # replaces decimal points with underscores to prevent mess-ups in file name
-        self.load_path = "Models/" + nn_type + "n" + str(n_layers) + "lr" + str(learning_rate) + "dor" + str(dropout_rate) \
-                         + "dr" + str(decay_rate) + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
+        self.load_path = "Models/" + nn_type + "n" + str(n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(learning_rate) + "dordown" + str(dropout_rate[0]) \
+                         + "dorup" + str(dropout_rate[1]) + "dr" + str(decay_rate) + "lamb" + str(lambd) + "bs" + str(batch_size) + "e" + str(epochs)
         self.load_path = self.load_path.replace(".","_") + ".h5" # replaces decimal points with underscores to prevent mess-ups in file name
         self.output_path = "Hyperparameters_Data.xlsx"
 
@@ -144,6 +147,23 @@ class HyperparamStudy:
         if self.plot_flag:
             MU.show_validation(self.model,x_val, y_val)
             MU.show_train(self.model,x_train, y_train)
+        # make file of 9 validation images (three 3x3 grids with .png, true labels, model labels)
+        img = np.zeros((580,1760,3))  # 2 pixel wide red line separating imgs in grid, 10 pixel wide red line separating grids
+        img[:,:,0] = 255  # make all red
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    if i == 0:  # first grid plot model labels
+                        result = self.model.predict(x_val[3*j+k:3*j+k+1, :, :, :])
+                        _, result = cv2.threshold(result[0], 0.50, 255, cv2.THRESH_BINARY)
+                        img[j*194:j*194+192,k*194+i*590:k*194+192+i*590,:] = np.repeat(result[:,:,np.newaxis],3,axis=2).astype('uint8')
+                    elif i == 1:  # second grid plot true labels
+                        img[j*194:j*194+192,k*194+i*590:k*194+192+i*590,:] = y_val[3*j+k].astype('uint8')
+                    elif i == 2:  # third grid plot png
+                        img[j*194:j*194+192,k*194+i*590:k*194+192+i*590,:] = x_val[3*j+k,:,:,:].astype('uint8')
+        if not os.path.isdir("Images/"):
+            os.mkdir("Images/")
+        cv2.imwrite(self.image_path+self.save_path[7:-2]+"png", img)
         return
 
 
@@ -168,6 +188,7 @@ class HyperparamStudy:
             ws1['M1'] = 'Average Validation Error'
             ws1['N1'] = 'IoU'
             ws1['O1'] = 'Batch Norm Booleans'
+            ws1['P1'] = 'Number of Filters'
         else:
             wb = openpyxl.load_workbook(filename=self.output_path)
             ws1 = wb.active
@@ -178,7 +199,7 @@ class HyperparamStudy:
         ws1["D"+str(row)] = self.decay_rate
         ws1["E"+str(row)] = self.lr_decay_scheme
         ws1["F"+str(row)] = self.lambd
-        ws1["G"+str(row)] = ' '.join([str(dr) for dr in self.dropout_rate])
+        ws1["G"+str(row)] = ', '.join([str(dr) for dr in self.dropout_rate])
         ws1["H"+str(row)] = self.batch_size
         ws1["I"+str(row)] = self.epochs
         ws1["J"+str(row)] = self.optimizer
@@ -186,32 +207,64 @@ class HyperparamStudy:
         ws1["L"+str(row)] = self.training_score
         ws1["M"+str(row)] = self.validation_score
         ws1["N"+str(row)] = self.iou
-        ws1["O"+str(row)] =  ' '.join([str(bn) for bn in self.batch_norm])
+        ws1["O"+str(row)] =  ', '.join([str(bn) for bn in self.batch_norm])
+        ws1["P"+str(row)] =  ', '.join([str(num) for num in self.num_filters])
         wb.save(filename=self.output_path)
         return
 
 
 if __name__ == '__main__':
     # Fill these np.arrays with as many options as user wishes (should all be same length)
-    image_size = [192]*9
-    nn_type = ["UNet"]*9  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
-    n_layers = 9*np.ones((9,))
-    learning_rate = 0.001*np.ones((9,))
-    dropout_rate = np.array([[0.6,0.1],[0.6,0.1],[0.6,0.1],[0.7,0.1],[0.7,0.1],[0.7,0.1],[0.75,0.1],[0.75,0.1],[0.75,0.1]])
-    decay_rate = np.zeros((9,))
-    lr_decay_scheme = ["exp"]*9
-    lambd = np.array([0.0,0.0,0.1,0.0,0.0,0.1,0.0,0.0,0.1]) * 1e-4
-    batch_size = np.array([32,16,32,32,16,32,32,16,32])
-    batch_norm = [[False,False]]*9
-    epochs = [100] + [70]*8
-    optimizer = ["adam"]*9
-    loss = ["binary_crossentropy"]*9
+    # image_size = [192]*9
+    # nn_type = ["UNet"]*9  # can use syntax ["UNet"]*len(image_size) or ["UNet" for i in range(len(image_size))] to make a list of repeated nn architectures
+    # n_layers = 9*np.ones((9,))
+    # learning_rate = 0.001*np.ones((9,))
+    # dropout_rate = np.array([[0.6,0.1],[0.6,0.1],[0.6,0.1],[0.7,0.1],[0.7,0.1],[0.7,0.1],[0.75,0.1],[0.75,0.1],[0.75,0.1]])
+    # decay_rate = np.zeros((9,))
+    # lr_decay_scheme = ["exp"]*9
+    # lambd = np.array([0.0,0.0,0.1,0.0,0.0,0.1,0.0,0.0,0.1]) * 1e-4
+    # batch_size = np.array([32,16,32,32,16,32,32,16,32])
+    # batch_norm = [[False,False]]*9
+    # epochs = [100] + [70]*8
+    # optimizer = ["adam"]*9
+    # loss = ["binary_crossentropy"]*9
+    case_path = "Cases_To_Run.xlsx"
+    wb = openpyxl.load_workbook(filename=case_path)
+    ws1 = wb.active
+    image_size = 192
+    nn_type = []
+    n_layers = []
+    learning_rate = []
+    dropout_rate = []
+    decay_rate = []
+    lr_decay_scheme = []
+    lambd = []
+    batch_size = []
+    batch_norm = []
+    epochs = []
+    optimizer = []
+    loss = []
+    num_filters = []
+    for row in range(2,ws1.max_row+1):
+        nn_type.append(ws1['A'+str(row)].value)
+        n_layers.append(ws1['B'+str(row)].value)
+        learning_rate.append(ws1['C'+str(row)].value)
+        decay_rate.append(ws1['D'+str(row)].value)
+        lr_decay_scheme.append(ws1['E'+str(row)].value)
+        lambd.append(ws1['F'+str(row)].value)
+        dropout_rate.append([float(i) for i in ws1['G'+str(row)].value.split(",")])
+        batch_size.append(ws1['H'+str(row)].value)
+        epochs.append(ws1['I'+str(row)].value)
+        optimizer.append(ws1['J'+str(row)].value)
+        loss.append(ws1['K'+str(row)].value)
+        batch_norm.append([bool(distutils.util.strtobool(i)) for i in ws1['L'+str(row)].value.split(",")])
+        num_filters.append([float(i) for i in ws1['M'+str(row)].value.split(",")])
     plot_flag = False
 
-    num_iter = len(image_size)
+    num_iter = ws1.max_row-1
 
     for i in range(num_iter):
-        HPS = HyperparamStudy(image_size=image_size[i], nn_type=nn_type[i], n_layers=n_layers[i], learning_rate=learning_rate[i],
+        HPS = HyperparamStudy(image_size=image_size, nn_type=nn_type[i], n_layers=n_layers[i], num_filters=num_filters[i], learning_rate=learning_rate[i],
                               dropout_rate=dropout_rate[i], decay_rate=decay_rate[i], lr_decay_scheme=lr_decay_scheme[i],lambd=lambd[i],
                               batch_size=batch_size[i], batch_norm=batch_norm[i], epochs=epochs[i], optimizer=optimizer[i], loss=loss[i],plot_flag=plot_flag)
         HPS.runner()
