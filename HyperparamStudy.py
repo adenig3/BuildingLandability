@@ -31,6 +31,7 @@ class HyperparamStudy:
         self.dropout_rate = dropout_rate
         self.batch_size = batch_size
         self.batch_norm = batch_norm
+        self.saves_per_epoch = 2
         self.epochs = epochs
         self.optimizer = optimizer
         self.loss = loss
@@ -71,6 +72,7 @@ class HyperparamStudy:
         y_val2 = y_val[:, :, :, 0]
         y_val = np.expand_dims(y_val2, axis=-1)
 
+
         if self.nn_type == "UNet":
             num_filters = [2**(4+i) for i in range(math.ceil(self.n_layers/2))]  # number of filters in each layer is a power of 2 starting at 16 up to bottleneck
             # if self.batch_norm:
@@ -105,7 +107,14 @@ class HyperparamStudy:
                 raise Exception("Please enter a valid optimizer.")
             self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
-            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, verbose=2)
+            #Callbacks To Save every certain epochs
+            filepath = "Models/" + nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
+            filepath = filepath + "{epoch: 03d}"
+            filepath = filepath.replace(".", "_") + ".h5"  # replaces decimal points with underscores to prevent mess-ups in file name
+            cp = tf.keras.callbacks.ModelCheckpoint(filepath=filepath, period=int(round(self.epochs/self.saves_per_epoch)))
+            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, verbose=2, callbacks=[cp])
+
+
         elif self.lr_decay_scheme == "time":
             if self.optimizer.lower() == "adam":
                 opt = keras.optimizers.Adam(learning_rate=learning_rate, decay=self.decay_rate)
@@ -115,7 +124,13 @@ class HyperparamStudy:
                 raise Exception("Please enter a valid optimizer.")
             self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
-            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, verbose=2)
+            # Callbacks To Save every certain epochs
+            filepath = "Models/" + nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
+            filepath = filepath + "{epoch: 03d}"
+            filepath = filepath.replace(".","_") + ".h5"  # replaces decimal points with underscores to prevent mess-ups in file name
+            cp = tf.keras.callbacks.ModelCheckpoint(filepath=filepath, period=int(round(self.epochs / self.saves_per_epoch)))
+            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, verbose=2, callbacks=[cp])
+
         else:
             if self.lr_decay_scheme == "exp":
                 callback = tf.keras.callbacks.LearningRateScheduler(exp_decay)  # makes callback with exponentially decaying learning rate
@@ -137,7 +152,12 @@ class HyperparamStudy:
                 raise Exception("Please enter a valid learning rate decay scheme.")
             self.model.compile(optimizer=opt, loss=self.loss, metrics=["acc",tf.keras.metrics.MeanIoU(num_classes=2)])
             self.model.summary()
-            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size, epochs=self.epochs, callbacks=[callback], verbose=2)
+            # Callbacks To Save every certain epochs
+            filepath = "Models/" + nn_type + "n" + str(self.n_layers) + "nf" + "-".join([str(f) for f in num_filters]) + "lr" + str(self.learning_rate) + "dordown" + str(self.dropout_rate[0]) + "dorup" + str(self.dropout_rate[1]) + "dr" + str(self.decay_rate) + "lamb" + str(self.lambd) + "bs" + str(self.batch_size) + "e"
+            filepath = filepath + "{epoch: 03d}"
+            filepath = filepath.replace(".","_") + ".h5"  # replaces decimal points with underscores to prevent mess-ups in file name
+            cp = tf.keras.callbacks.ModelCheckpoint(filepath=filepath,period=int(round(self.epochs / self.saves_per_epoch)))
+            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size,epochs=self.epochs, verbose=2, callbacks=[cp])
 
         self.training_score = self.model.evaluate(x_train, y_train, verbose=0)[1]
         self.validation_score = self.model.evaluate(x_val, y_val, verbose=0)[1]
