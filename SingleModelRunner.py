@@ -34,7 +34,7 @@ download = False
 sort = False
 make_pickle = False
 augment = False
-make_model = False
+make_model = True
 
 
 JM = JSONManager(json_path, sets, inputs_path, labels_path, data_pct)
@@ -81,8 +81,8 @@ if make_model:
     model = UNet([32, 64, 128, 256, 512], image_size, 0, [0.6, 0.0], [False, False])
     for i in range(0,5):
         if i == 0:
-            #model = model.configure()
-            model = MU.load_model(save_path)
+            model = model.configure()
+            #model = MU.load_model(save_path)
         else:
             model = MU.load_model(save_path)
         #model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["acc"])
@@ -123,5 +123,3 @@ MU.show_train(model,x_train, y_train)
 
 """Problems:
 1) Its can identify prominent edges, but doesnt know whether it's large enough, or if road/texture is appropriate"""
-
-
