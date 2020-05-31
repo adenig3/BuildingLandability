@@ -125,6 +125,8 @@ class JSONManager:
         return x, y
 
     def normalize_dataset(self,x,y):
+        x = x.astype('float64')
+        y = y.astype('float64')
         for i in range(x.shape[0]):
             x[i] = x[i]/255
             y[i] = y[i]/255
