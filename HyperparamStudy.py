@@ -157,12 +157,12 @@ class HyperparamStudy:
             filepath = filepath + "{epoch: 03d}"
             filepath = filepath.replace(".","_") + ".h5"  # replaces decimal points with underscores to prevent mess-ups in file name
             cp = tf.keras.callbacks.ModelCheckpoint(filepath=filepath,period=int(round(self.epochs / self.saves_per_epoch)))
-            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size,epochs=self.epochs, verbose=2)
+            self.model.fit(x=x_train, y=y_train, batch_size=self.batch_size,epochs=self.epochs, verbose=2, callbacks=[callback])
 
+        MU.save_model(self.model, self.save_path)
         self.training_score = self.model.evaluate(x_train, y_train, verbose=0)[1]
         self.validation_score = self.model.evaluate(x_val, y_val, verbose=0)[1]
-        self.iou = tf.keras.metrics.MeanIoU(num_classes=2).result().numpy()
-        MU.save_model(self.model, self.save_path)
+        self.iou = 0  #tf.keras.metrics.MeanIoU(num_classes=2).result().numpy()
 
         if self.plot_flag:
             MU.show_validation(self.model,x_val, y_val)

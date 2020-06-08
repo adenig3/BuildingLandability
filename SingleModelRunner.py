@@ -19,8 +19,8 @@ json_path ="export-2020-05-18T16_04_41.148Z.json"
 sets = ['first100train', 'main set 1']
 inputs_path = 'Inputs/'
 labels_path = 'Labels/'
-load_path = 'Models/UNet_Dropout_0.6_0.0_more_images.h5'
-save_path = 'Models/UNet_Dropout_0.6_0.0_more_images.h5'
+load_path = 'Models/UNetn9nf16_0-32_0-64_0-128_0-256_0lr0_001dordown0_0dorup0_0dr0lamb0bs32e70.h5'
+save_path = 'Models/UNetn9nf16_0-32_0-64_0-128_0-256_0lr0_001dordown0_0dorup0_0dr0lamb0bs32e70.h5'
 
 
 
@@ -34,7 +34,7 @@ download = False
 sort = False
 make_pickle = False
 augment = False
-make_model = True
+make_model = False
 
 
 JM = JSONManager(json_path, sets, inputs_path, labels_path, data_pct)
